@@ -1,5 +1,13 @@
 <template>
   <div class="mx-auto max-w-screen-md px-6 pt-12">
+    <div>
+      <form @submit.prevent="createUser">
+        <input type="text" placeholder="name" v-model="name">
+        <input type="text" placeholder="email" v-model="email">
+        <button type="submit">Create new user</button>
+      </form>
+      <p>{{ name }} {{ email }}</p>
+    </div>
     <div class="bg-gray-800 rounded-lg shadow">
       <div class="">
         <div
@@ -15,7 +23,14 @@
               style="width: 50px"
             >
           </div>
-          <div>
+          <div v-if="o.id === userEdit.id">
+            <form action="" @submit.prevent="updateUser">
+              <input type="text" placeholder="name" v-model="userEdit.name">
+              <input type="text" placeholder="email" v-model="userEdit.email">
+              <button type="submit">Update</button>
+            </form>
+          </div>
+          <div v-else>
             <nuxt-link to="/" class="font-semibold text-white">
               {{ o.email }}
             </nuxt-link>
@@ -27,12 +42,15 @@
             <a
               href="#"
               class="uppercase text-sm text-white text-opacity-75 hover:text-opacity-100 font-semibold"
+              @click.prevent="showEdit(o)"
             >
-              Edit
+              {{ o.id === userEdit.id ? 'Cancel' : 'Edit' }}
             </a>
             <a
               href="#"
               class="uppercase text-sm text-red-500 text-opacity-75 hover:text-opacity-100 font-semibold"
+              @click.prevent="deleteUser(o.id)"
+              v-if="o.id !== userEdit.id"
             >
               Delete
             </a>
@@ -47,7 +65,15 @@
 export default {
   data() {
     return {
-      response: {}
+      response: {},
+      newUser: {},
+      name: '',
+      email: '',
+      userEdit: {
+        id: null,
+        name: '',
+        email: ''
+      }
     }
   },
   computed: {
@@ -77,6 +103,30 @@ export default {
     async getData() {
       const response = await this.$axios.$get('users')
       this.response = response
+    },
+    async createUser() {
+      const { name, email } = this
+      const newUser = await this.$axios.$post('users', { name, email })
+      this.newUser = newUser
+      console.log('success \n', newUser)
+
+      this.name = ''
+      this.email = ''
+    },
+    async updateUser() {
+      const { name, email, id } = this.userEdit
+      const updated = await this.$axios.$put(`users/${id}`, { name, email })
+      this.userEdit.id = null
+      console.log(updated)
+    },
+    async deleteUser(id) {
+      const deleteResponse = await this.$axios.delete(`users/${id}`)
+      console.log('delete user \n', deleteResponse)
+    },
+    showEdit({ id, first_name, last_name, email }) {
+      if (id === this.userEdit.id) return this.userEdit.id = null
+      const name = `${first_name} ${last_name}`
+      this.userEdit = { id, name, email }
     }
   }
 }
